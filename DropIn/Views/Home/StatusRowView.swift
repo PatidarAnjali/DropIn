@@ -19,6 +19,10 @@ struct StatusRowView: View {
     var currentUserName: String? = nil
     var currentUserAvatar: String? = nil
     let onTapAttend: () -> Void
+    /// Only ever wired up for the signed-in user's own hangs — lets
+    /// them quietly go invisible without any "you were unpaused"-style
+    /// notice going to friends.
+    var onTogglePause: (() -> Void)? = nil
 
     private var posterAvatar: String? {
         status.userId == currentUserId ? currentUserAvatar : status.avatarImageName
@@ -38,6 +42,25 @@ struct StatusRowView: View {
         return MockData.username(forUserId: attendeeId) ?? "Friend"
     }
 
+    /// Whether the signed-in user has already RSVP'd to this hang, so
+    /// the button can flip to an "undo" state instead of always reading
+    /// like a fresh invite.
+    private var isAttending: Bool {
+        guard let currentUserId else { return false }
+        return status.attendees.contains(currentUserId)
+    }
+
+    private var attendLabel: String {
+        if isOwnStatus { return "Drop In" }
+        if isAttending { return "Can't Make It" }
+        return status.isUpcoming ? "I'm In" : "I'm Coming!"
+    }
+
+    private var attendIcon: String {
+        if isOwnStatus { return "sparkles" }
+        return isAttending ? "xmark" : "hand.wave.fill"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -50,13 +73,23 @@ struct StatusRowView: View {
 
                 Spacer()
 
-                Text(status.expiryLabel)
-                    .font(DropInFont.bodyMedium(11))
-                    .foregroundColor(.dropInIndigo.opacity(0.6))
-                    .padding(.vertical, 5)
-                    .padding(.horizontal, 10)
-                    .background(Color.white.opacity(0.65))
-                    .clipShape(Capsule())
+                HStack(spacing: 6) {
+                    if status.isPrivate {
+                        privacyBadge
+                    }
+
+                    Text(status.timingLabel)
+                        .font(DropInFont.bodyMedium(11))
+                        .foregroundColor(.dropInIndigo.opacity(0.6))
+                        .padding(.vertical, 5)
+                        .padding(.horizontal, 10)
+                        .background(Color.white.opacity(0.65))
+                        .clipShape(Capsule())
+
+                    if isOwnStatus, let onTogglePause {
+                        pauseButton(action: onTogglePause)
+                    }
+                }
             }
 
             HStack(spacing: 10) {
@@ -74,21 +107,31 @@ struct StatusRowView: View {
                     .lineLimit(2)
             }
 
+            if isOwnStatus && status.isPaused {
+                Label("Paused — only you can see this right now", systemImage: "eye.slash.fill")
+                    .font(DropInFont.body(12))
+                    .foregroundColor(.dropInIndigo.opacity(0.55))
+            }
+
             HStack {
                 Button(action: onTapAttend) {
                     HStack(spacing: 6) {
-                        Image(systemName: isOwnStatus ? "sparkles" : "hand.wave.fill")
+                        Image(systemName: attendIcon)
                             .font(.system(size: 12))
-                        Text(isOwnStatus ? "Drop In" : "I'm Coming!")
+                        Text(attendLabel)
                             .font(DropInFont.bodyMedium(14))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(isAttending ? .dropInIndigo.opacity(0.7) : .white)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 18)
-                    .background(Color.dropInIndigo)
+                    .background(isAttending ? Color.white.opacity(0.85) : Color.dropInIndigo)
                     .clipShape(Capsule())
-                    .shadow(color: Color.dropInIndigo.opacity(0.25), radius: 6, y: 3)
+                    .overlay(
+                        Capsule().stroke(Color.dropInIndigo.opacity(isAttending ? 0.2 : 0), lineWidth: 1)
+                    )
+                    .shadow(color: Color.dropInIndigo.opacity(isAttending ? 0.08 : 0.25), radius: 6, y: 3)
                 }
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isAttending)
 
                 Spacer()
 
@@ -107,7 +150,7 @@ struct StatusRowView: View {
             }
         }
         .padding(18)
-        .background(Color(hex: status.category.tint).opacity(0.6))
+        .background(Color(hex: status.category.tint).opacity(status.isPaused ? 0.3 : 0.6))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -115,12 +158,35 @@ struct StatusRowView: View {
         )
         .shadow(color: Color.dropInIndigo.opacity(0.07), radius: 12, y: 6)
     }
+
+    /// Visible only to the poster (everyone else who can even see this
+    /// card was already one of the people invited), just a quiet
+    /// reminder of who it's limited to.
+    private var privacyBadge: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundColor(.dropInIndigo.opacity(0.55))
+            .padding(6)
+            .background(Color.white.opacity(0.65))
+            .clipShape(Circle())
+    }
+
+    private func pauseButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: status.isPaused ? "eye.slash.fill" : "eye.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.dropInIndigo.opacity(0.6))
+                .padding(6)
+                .background(Color.white.opacity(0.65))
+                .clipShape(Circle())
+        }
+    }
 }
 
 #Preview {
     VStack(spacing: 14) {
         StatusRowView(status: MockData.statuses[0], isOwnStatus: false, onTapAttend: {})
-        StatusRowView(status: MockData.statuses[1], isOwnStatus: true, onTapAttend: {})
+        StatusRowView(status: MockData.statuses[1], isOwnStatus: true, onTapAttend: {}, onTogglePause: {})
     }
     .padding()
     .background(Color.dropInCream)
