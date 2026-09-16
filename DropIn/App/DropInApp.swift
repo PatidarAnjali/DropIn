@@ -28,6 +28,8 @@ struct DropInApp: App {
                 }
             }
             .environment(authViewModel)
+            // Open Sans for any text that doesn't set its own font.
+            .font(DropInFont.body())
         }
     }
 }
