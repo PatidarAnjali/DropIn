@@ -23,15 +23,16 @@ struct AppBackground: View {
     var wallpaperOpacity: Double = 1.0
 
     var body: some View {
-        ZStack {
-            Color.dropInCream
 
-            Image("DoodleWallpaper")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .opacity(wallpaperOpacity)
-        }
-        .ignoresSafeArea()
+        Color.dropInCream
+            .overlay(
+                Image("DoodleWallpaper")
+                    .resizable()
+                    .scaledToFill()
+                    .opacity(wallpaperOpacity)
+            )
+            .clipped()
+            .ignoresSafeArea()
     }
 }
 
