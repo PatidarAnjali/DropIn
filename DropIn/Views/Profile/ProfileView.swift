@@ -86,7 +86,7 @@ struct ProfileView: View {
             .padding(.top, 14)
             .padding(.bottom, 20)
         }
-        .doodleAccents()
+//        .doodleAccents()
         .onAppear {
             selectedAvatar = authViewModel.currentUser?.avatarUrl
         }

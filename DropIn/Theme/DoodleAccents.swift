@@ -9,37 +9,37 @@
 //  CTAs so they never sit on top of anything tappable.
 //
 
-import SwiftUI
+//import SwiftUI
 
-struct DoodleAccentsView: View {
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Image(systemName: "star")
-                    .font(.system(size: 20))
-                    .foregroundColor(.dropInDoodleLine.opacity(0.16))
-                    .rotationEffect(.degrees(8))
-                    .position(x: proxy.size.width * 0.06, y: proxy.size.height * 0.42)
+//struct DoodleAccentsView: View {
+//    var body: some View {
+//        GeometryReader { proxy in
+//            ZStack {
+//                Image(systemName: "star")
+//                    .font(.system(size: 20))
+//                    .foregroundColor(.dropInDoodleLine.opacity(0.16))
+//                    .rotationEffect(.degrees(8))
+//                    .position(x: proxy.size.width * 0.06, y: proxy.size.height * 0.42)
+//
+//                Image(systemName: "circle.dashed")
+//                    .font(.system(size: 24))
+//                    .foregroundColor(.dropInDoodleLine.opacity(0.13))
+//                    .position(x: proxy.size.width * 0.95, y: proxy.size.height * 0.58)
+//            }
+//        }
+//        .allowsHitTesting(false)
+//    }
+//}
 
-                Image(systemName: "circle.dashed")
-                    .font(.system(size: 24))
-                    .foregroundColor(.dropInDoodleLine.opacity(0.13))
-                    .position(x: proxy.size.width * 0.95, y: proxy.size.height * 0.58)
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
+//extension View {
+//    /// Adds a couple of faint decorative doodles along the screen's
+//    /// mid-edges. Use on every screen except Login, which keeps the full
+//    /// wallpaper background instead.
+//    func doodleAccents() -> some View {
+//        overlay(DoodleAccentsView())
+//    }
+//}
 
-extension View {
-    /// Adds a couple of faint decorative doodles along the screen's
-    /// mid-edges. Use on every screen except Login, which keeps the full
-    /// wallpaper background instead.
-    func doodleAccents() -> some View {
-        overlay(DoodleAccentsView())
-    }
-}
-
-#Preview {
-    Color.dropInCream.ignoresSafeArea().doodleAccents()
-}
+//#Preview {
+//    Color.dropInCream.ignoresSafeArea().doodleAccents()
+//}

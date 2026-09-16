@@ -86,7 +86,7 @@ struct CreateStatusSheet: View {
             .padding(.top, 44)
             .padding(.bottom, 28)
         }
-        .doodleAccents()
+//        .doodleAccents()
     }
 
     private var closeButton: some View {

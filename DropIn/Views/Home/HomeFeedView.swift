@@ -87,7 +87,7 @@ struct HomeFeedView: View {
                 }
             }
         }
-        .doodleAccents()
+//        .doodleAccents()
         .sheet(isPresented: $showCreateSheet) {
             CreateStatusSheet { newStatus in
                 homeViewModel.addStatus(newStatus)
