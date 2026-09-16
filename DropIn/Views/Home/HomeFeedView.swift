@@ -135,6 +135,7 @@ struct HomeFeedView: View {
             currentUserId: authViewModel.currentUser?.id,
             currentUserName: authViewModel.currentUser?.name,
             currentUserAvatar: authViewModel.currentUser?.avatarUrl,
+            usersById: homeViewModel.usersById,
             onTapAttend: {
                 homeViewModel.toggleAttendance(for: status, currentUserId: currentUserId)
             },

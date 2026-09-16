@@ -42,7 +42,7 @@ struct LoginView: View {
                         .font(DropInFont.brand(36))
                         .foregroundColor(.dropInIndigo)
 
-                    Text("Sign up & see what\nfriends are up to!")
+                    Text("Stay up & see what\nfriends are up to!")
                         .font(DropInFont.body(16))
                         .multilineTextAlignment(.center)
                         .foregroundColor(.dropInIndigo.opacity(0.7))

@@ -22,6 +22,9 @@ struct StatusRowView: View {
     var currentUserId: String? = nil
     var currentUserName: String? = nil
     var currentUserAvatar: String? = nil
+    /// Real profiles loaded from Firestore (see HomeViewModel.usersById),
+    /// used to show attendees' actual names and avatars.
+    var usersById: [String: User] = [:]
     let onTapAttend: () -> Void
     /// Only ever wired up for the signed-in user's own hangs — lets
     /// them quietly go invisible without any "you were unpaused"-style
@@ -31,11 +34,15 @@ struct StatusRowView: View {
     @State private var showAttendees = false
 
     private var posterAvatar: String? {
-        status.userId == currentUserId ? currentUserAvatar : status.avatarImageName
+        if status.userId == currentUserId { return currentUserAvatar }
+        // Prefer their current avatar over the one saved when they posted.
+        return usersById[status.userId]?.avatarUrl ?? status.avatarImageName
     }
 
     private func avatar(forAttendee attendeeId: String) -> String? {
-        attendeeId == currentUserId ? currentUserAvatar : MockData.avatar(forUserId: attendeeId)
+        if attendeeId == currentUserId { return currentUserAvatar }
+        if let user = usersById[attendeeId] { return user.avatarUrl }
+        return MockData.avatar(forUserId: attendeeId) // Xcode Previews only
     }
 
     /// A real, human name to fall back on for the initials bubble — never
@@ -45,7 +52,9 @@ struct StatusRowView: View {
         if attendeeId == currentUserId {
             return currentUserName ?? "You"
         }
-        return MockData.username(forUserId: attendeeId) ?? "Friend"
+        return usersById[attendeeId]?.name
+            ?? MockData.username(forUserId: attendeeId) // Xcode Previews only
+            ?? "Friend"
     }
 
     /// Whether the signed-in user has already RSVP'd to this hang, so
