@@ -1,145 +1,157 @@
-# Minimum Viable Product (MVP) Specification & Architecture
-## Project Name: DropIn (Casual Micro-Plans for Friends)
+<p align="center">
+  <img src="DropIn/Assets/Logo-Transparent.png" alt="DropIn logo" width="120">
+</p>
+
+<h1 align="center">DropIn</h1>
+
+<p align="center">
+  <strong>Casual micro-plans for friends.</strong><br>
+  Share what you're already up to, and let friends drop in if they're free.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-iOS-23345C" alt="Platform: iOS">
+  <img src="https://img.shields.io/badge/SwiftUI-E2735A" alt="SwiftUI">
+  <img src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-AFC2A5" alt="Firebase">
+</p>
 
 ---
 
-## 1. Executive Summary
-**DropIn** is a lightweight, iOS-exclusive mobile application designed to solve the problem of staying connected with busy friends. Instead of relying on formal, high-friction event planning, DropIn allows users to broadcast low-pressure, spontaneous micro-plans (e.g., "Grabbing coffee," "Studying at the library") that they are already doing. Friends can see these active broadcasts in real time and easily "drop in" if they are free, eliminating scheduling overhead and social rejection anxiety.
+> **Note:** This is just a fun personal project; it's not actually a real/published app.
 
 ---
 
-## 2. Scope of the MVP
-The core philosophy of the MVP is **simplicity and low friction**. The initial release will focus entirely on a single, trusted friend circle rather than public discovery or complex algorithmic feeds.
+## About
 
-### In-Scope Features
-* **User Authentication:** Simple signup/login using Email/Password via Firebase.
-* **The "Live Feed":** A single, real-time scrollable view showing active statuses posted by friends.
-* **One-Tap Status Broadcast:** A creation screen allowing users to type a status, pick an icon/category, and set an expiration window (e.g., 1 hour, 3 hours).
-* **"I'm Coming" (DropIn) Interaction:** A simple tap mechanism for friends to notify the host that they are on their way.
-* **Automatic Expiration:** Statuses vanish automatically after their expiration time passes to keep the feed fresh and relevant.
+Making plans with busy friends usually means group chats, calendars, and a lot of "maybe next week." DropIn skips all that. Instead of planning an event, you post what you're **already doing**, like *"Grabbing coffee at Starbucks"* or *"Studying at the library"*. Friends see it in a live feed and can tap **I'm Coming!** if they're free.
 
-### Out-of-Scope (Future Phases)
-* Home screen interactive widgets (`WidgetKit`).
-* Push notifications for new broadcasts.
-* Complex map integrations and live location tracking (`CoreLocation`).
-* Multiple distinct friend circles or group management.
+No pressure to reply and no awkward "no." Plans disappear on their own once they expire.
 
----
+## Screenshots
 
-## 3. Technology Stack
-* **Language:** Swift 5.10+
-* **UI Framework:** SwiftUI
-* **Concurrency:** Swift Async/Await (`async/await`)
-* **Local Data & State:** `@State`, `@StateObject`, `@Published`
-* **Backend & Real-time Database:** Firebase Firestore (for live status synchronization) and Firebase Auth.
-* **Minimum iOS Target:** iOS 17.0+ (to leverage modern SwiftUI APIs and SwiftData if needed later).
+<p align="center">
+  <img width="1920" height="1080" alt="Live Feed" src="https://github.com/user-attachments/assets/a6619fd0-97a1-4f5c-9040-203744896b01" />
+  <img width="1920" height="1080" alt="5" src="https://github.com/user-attachments/assets/79bd7424-5b59-4ac2-9be5-ebee8f9da1fd" />
+</p>
 
----
+## Features
 
-## 4. Architecture & Design Patterns
-The application follows the **MVVM (Model-View-ViewModel)** structural pattern, which is standard and highly performant for SwiftUI applications.
+### Plans
+- **Live feed** of friends' plans, updated in real time with Firestore
+- **Right now or plan ahead.** Post something that's happening now, or schedule it to start later. Upcoming plans show in a separate "Starting Soon" section
+- **Auto-expiring.** Each plan has a timer and disappears when it ends
+- **Categories** (coffee, study, walk, food), each with its own icon and card color
+- **Search** through what friends are up to
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                          VIEW                           │
-│  (SwiftUI: HomeFeedView, CreateStatusView, LoginView)   │
-└────────────────────────────┬────────────────────────────┘
-                             │ Observes & Triggers Actions
-                             ▼
-┌─────────────────────────────────────────────────────────┐
-│                        VIEWMODEL                        │
-│         (Swift/Combine: HomeViewModel, AuthViewModel)  │
-└────────────────────────────┬────────────────────────────┘
-                             │ Fetches & Mutates
-                             ▼
-┌─────────────────────────────────────────────────────────┐
-│                          MODEL                          │
-│               (Swift Structs: User, Status)             │
-└─────────────────────────────────────────────────────────┘
-```
+### Dropping in
+- Friends tap **I'm Coming!** (or **I'm In** for upcoming plans) and can undo with **Can't Make It**
+- The person who made the plan **can't drop in on their own plan**. They get a **"who's dropping in"** list instead
 
-### Directory Structure
+### Privacy
+- **Choose friends.** Share a plan with everyone, or only with selected friends
+- **Pause.** Hide your plan from everyone without deleting it and without notifying anyone
+
+### Avatars
+- **Build-your-own avatar** with skin tone, face shape, build, hair, facial hair, eyes, brows, mouth, outfit, hats, glasses, earrings, and background
+- Every option is open to everyone, with no gender step
+- Avatars are drawn in code with SwiftUI `Canvas`, so there are no image assets and they stay sharp at any size
+- Includes shuffle, reset, and quick-start looks
+
+## Tech Stack
+
+| | |
+|---|---|
+| **Language** | Swift |
+| **UI** | SwiftUI (`@Observable`, `Canvas`) |
+| **Architecture** | MVVM |
+| **Backend** | Firebase Authentication (email/password) and Cloud Firestore |
+| **Dependencies** | [Firebase iOS SDK](https://github.com/firebase/firebase-ios-sdk) via Swift Package Manager |
+| **Notifications** | `UserNotifications` (local notifications for now) |
+| **Fonts** | [Raleway](https://fonts.google.com/specimen/Raleway) (logo) and [Open Sans](https://fonts.google.com/specimen/Open+Sans) (everything else) |
+
+## Project Structure
+
 ```text
 DropIn/
 ├── App/
-│   └── DropInApp.swift              # App Entry Point & Firebase Setup
+│   └── DropInApp.swift # entry point, switches between Login and Home
 ├── Models/
-│   ├── User.swift                    # User Profile Data Structure
-│   └── Status.swift                  # Micro-Plan Status Structure
+│   ├── User.swift # user profile (Firestore "users")
+│   ├── Status.swift # A plan (Firestore "statuses")
+│   ├── AvatarConfig.swift # rvery avatar choice + save format
+│   └── MockData.swift # sample data for Xcode Previews
 ├── ViewModels/
-│   ├── AuthViewModel.swift           # Handles Login, Registration, Session State
-│   └── HomeViewModel.swift           # Handles Fetching, Posting, and Expiring Statuses
+│   ├── AuthViewModel.swift # sign in / sign up / session
+│   └── HomeViewModel.swift # ;ive feed, posting, RSVPs, pausing
 ├── Views/
-│   ├── Auth/
-│   │   ├── LoginView.swift           # Login UI
-│   │   └── RegisterView.swift        # Registration UI
+│   ├── Auth/LoginView.swift
 │   ├── Home/
-│   │   ├── HomeFeedView.swift        # Main Dashboard / Live Feed
-│   │   └── StatusRowView.swift       # Reusable Individual Status Card Component
-│   └── Component/
-│       └── CreateStatusSheet.swift   # Sheet to Broadcast a New Plan
-└── Services/
-    └── FirebaseManager.swift         # Firestore Data Pipeline & Auth Wrappers
+│   │   ├── HomeFeedView.swift # live feed + search
+│   │   └── StatusRowView.swift # plan card + "who's dropping in" sheet
+│   ├── Component/
+│   │   ├── CreateStatusSheet.swift # "What are you up to?"
+│   │   └── AvatarView.swift
+│   ├── Avatar/
+│   │   ├── AvatarBuilderView.swift # avatar customization screen
+│   │   └── AvatarRenderer.swift # draws avatars w/ Canvas
+│   └── Profile/ProfileView.swift
+├── Services/
+│   ├── FirebaseBootstrap.swift
+│   ├── FirestoreService.swift
+│   └── NotificationService.swift
+├── Theme/
+│   ├── Theme.swift # Colors, fonts, spacing, shared styles
+│   └── AppBackground.swift
+└── Resources/Fonts/
 ```
 
----
+## Getting Started
 
-## 5. Data Models (Swift Representation)
+### Requirements
+- A Mac with a recent version of **Xcode**
+- A free **[Firebase](https://console.firebase.google.com/)** account
 
-```swift
-import Foundation
-import FirebaseFirestore
-
-struct User: Codable, Identifiable {
-    @DocumentID var id: String?
-    let name: String
-    let email: String
-    let avatarUrl: String?
-}
-
-struct Status: Codable, Identifiable {
-    @DocumentID var id: String?
-    let userId: String
-    let username: String
-    let activityText: String
-    let categoryIcon: String // E.g., "coffee", "book", "figure.walk"
-    let createdAt: Date
-    let expiresAt: Date
-    var attendees: [String] // Array of userIds who tapped "I'm Coming"
-    
-    var isExpired: Bool {
-        return Date() > expiresAt
-    }
-}
+### 1. Clone the repo
+```bash
+git clone https://github.com/<your-username>/DropIn.git
+cd DropIn
+open DropIn.xcodeproj
 ```
+Xcode downloads the Firebase packages automatically the first time you open the project.
 
----
+### 2. Set up Firebase
+1. Create a new project in the [Firebase console](https://console.firebase.google.com/).
+2. Add an **iOS app** using the same bundle identifier as the Xcode project.
+3. Download **`GoogleService-Info.plist`** and put it in the `DropIn/` folder (next to `README.md` inside the app folder).
+4. Under **Authentication → Sign-in method**, turn on **Email/Password**.
+5. Under **Firestore Database**, create a database.
 
-## 6. Implementation & Learning Plan (Milestones)
+### 3. Run
+Choose an iPhone simulator and press **⌘R**.
 
-### Milestone 1: Local Prototyping (No Backend)
-* **Goal:** Understand SwiftUI Layouts and Local State.
-* **Tasks:**
-  * Build `HomeFeedView` using static mock data arrays.
-  * Implement the `CreateStatusSheet` modal overlay using `.sheet()`.
-  * Use `@State` and `@Binding` to pass information from the sheet back to the list layout locally.
+On the login screen, enter a username, email, and password, then tap **Get Started**. If there's no account for that email yet, one is created for you.
 
-### Milestone 2: Cloud Infrastructure & Authentication
-* **Goal:** Connect your app to the outside world.
-* **Tasks:**
-  * Create a free-tier Firebase project.
-  * Integrate the Firebase iOS SDK using Swift Package Manager (SPM).
-  * Build simple login and signup screens that switch views conditionally based on the active user session.
+## Design
 
-### Milestone 3: Real-Time Syncing (The "Magic" Phase)
-* **Goal:** Master asynchronous data flows and reactive pipelines.
-* **Tasks:**
-  * Implement a Firestore snapshot listener in `HomeViewModel` to fetch live data streams.
-  * Wire up the "Create" button to push real-time document models into Firestore.
-  * Test updating a status on an iOS simulator and watching it instantly update on a physical iPhone screen.
+| Color | Hex | Used for |
+|---|---|---|
+| Warm Coral | `#E2735A` | Main buttons and highlights |
+| Indigo Blue | `#23345C` | Headings and text |
+| Cream | `#FFFCFA` | Backgrounds |
+| Soft Sage Green | `#AFC2A5` | Cards and accents |
+| Pale Pink | `#F2C9CE` | Cards and accents |
 
-### Milestone 4: Polishing & Edge Cases
-* **Goal:** Deliver a smooth UX.
-* **Tasks:**
-  * Add automatic query filters to Firestore so statuses where `expiresAt < CurrentTime` are excluded.
-  * Implement haptic feedback (`UIImpactFeedbackGenerator`) when tapping the "I'm Coming" button to make the action feel tactile and satisfying.
+Colors, fonts, and spacing all live in [`Theme/Theme.swift`](DropIn/Theme/Theme.swift), so every screen uses the same values.
+
+## Roadmap
+
+- [ ] Real friend list and friend requests (friend names and avatars in the attendee list currently come from sample data)
+- [ ] Push notifications to friends' devices when a plan goes live (currently local notifications only)
+- [ ] Firestore security rules
+- [ ] Home screen widgets
+- [ ] Haptic feedback on "I'm Coming!"
+
+## Credits
+
+- Fonts: [Raleway](https://fonts.google.com/specimen/Raleway) and [Open Sans](https://fonts.google.com/specimen/Open+Sans), both under the [SIL Open Font License](https://openfontlicense.org/). License files are in `Resources/Fonts`.
+- Built with [Firebase](https://firebase.google.com/).
