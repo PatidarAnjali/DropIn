@@ -2,9 +2,10 @@
 //  MockData.swift
 //  DropIn
 //
-//  Milestone 1 fuel: static data so HomeFeedView has something to render
-//  before Firebase exists. Delete this file once Milestone 3 wires up
-//  the real Firestore listener.
+//  Now Preview-only fuel — HomeViewModel reads live data from Firestore,
+//  but #Preview blocks (StatusRowView, CreateStatusSheet, etc.) still use
+//  this so Xcode's canvas has something to render without hitting the
+//  network or requiring a signed-in Firebase user.
 //
 
 import Foundation

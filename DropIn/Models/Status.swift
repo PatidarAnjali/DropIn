@@ -2,13 +2,13 @@
 //  Status.swift
 //  DropIn
 //
-//  Milestone 1 version: a plain Swift struct so we can build and preview
-//  the UI with mock data. In Milestone 2/3 we'll add `@DocumentID` and
-//  Firestore's `Codable` conformance without changing the views at all —
-//  that's the whole point of MVVM.
+//  Now backed by Firestore — `@DocumentID` and `Codable` conformance
+//  let HomeViewModel read/write these straight from/to the "statuses"
+//  collection without any manual (de)serialization code.
 //
 
 import Foundation
+import FirebaseFirestore
 
 enum StatusCategory: String, CaseIterable, Codable {
     case coffee, study, walk, food
@@ -33,7 +33,11 @@ enum StatusCategory: String, CaseIterable, Codable {
 }
 
 struct Status: Identifiable, Codable {
-    var id: String = UUID().uuidString
+    /// Firestore auto-generates this when the doc is created via
+    /// `addDocument(from:)`; it's nil only for a not-yet-saved local
+    /// instance (e.g. the one built by CreateStatusSheet before it's
+    /// written).
+    @DocumentID var id: String?
     let userId: String
     let username: String
     let activityText: String
@@ -52,8 +56,10 @@ struct Status: Identifiable, Codable {
     /// nil = visible to every friend (today's default behavior).
     /// Non-nil = only visible to the poster and the friend ids listed
     /// here (This-Establishment26 / achilltrainer's feedback: not every
-    /// hang should broadcast to the whole group).
-    var visibleToUserIds: Set<String>? = nil
+    /// hang should broadcast to the whole group). Stored as a plain
+    /// array (rather than a Set) since that's what Firestore's Codable
+    /// support serializes reliably.
+    var visibleToUserIds: [String]? = nil
     /// The poster quietly went invisible. The hang keeps existing (so
     /// the poster still sees it and can resume it) but disappears from
     /// everyone else's feed with no "paused" indicator shown to them —

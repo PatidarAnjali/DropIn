@@ -2,21 +2,19 @@
 //  DropInApp.swift
 //  DropIn
 //
-//  App entry point. Milestone 1: switches between LoginView and
-//  HomeFeedView based on a local flag in AuthViewModel.
-//  Milestone 2: add `FirebaseApp.configure()` here once the Firebase
-//  SDK is added via Swift Package Manager (see setup guide).
+//  App entry point. Switches between LoginView and HomeFeedView based
+//  on AuthViewModel.isAuthenticated, which now tracks Firebase Auth's
+//  real session state.
 //
 
 import SwiftUI
-//import FirebaseCore
 
 @main
 struct DropInApp: App {
 
-    // init() {
-    //     FirebaseApp.configure() // uncomment in Milestone 2
-    // }
+    init() {
+        FirebaseBootstrap.configureIfNeeded()
+    }
 
     @State private var authViewModel = AuthViewModel()
 
