@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+//import FirebaseCore
 
 @main
 struct DropInApp: App {

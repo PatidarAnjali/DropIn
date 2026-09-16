@@ -11,6 +11,10 @@ struct HomeFeedView: View {
     @State private var showCreateSheet = false
     @State private var showProfile = false
 
+    private var currentUserId: String {
+        authViewModel.currentUser?.id ?? "me"
+    }
+
     var body: some View {
         ZStack {
             // Plain background once inside the app. The hand-drawn
@@ -30,24 +34,43 @@ struct HomeFeedView: View {
                     .frame(height: 1)
                     .padding(.horizontal, DropInLayout.screenMargin)
 
-                if homeViewModel.filteredStatuses.isEmpty {
+                let live = homeViewModel.liveStatuses(for: currentUserId)
+                let upcoming = homeViewModel.upcomingStatuses(for: currentUserId)
+
+                if live.isEmpty && upcoming.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(homeViewModel.filteredStatuses) { status in
-                                StatusRowView(
-                                    status: status,
-                                    isOwnStatus: status.userId == authViewModel.currentUser?.id,
-                                    currentUserId: authViewModel.currentUser?.id,
-                                    currentUserName: authViewModel.currentUser?.name,
-                                    currentUserAvatar: authViewModel.currentUser?.avatarUrl
-                                ) {
-                                    homeViewModel.toggleAttendance(
-                                        for: status,
-                                        currentUserId: authViewModel.currentUser?.id ?? "me"
-                                    )
+                        LazyVStack(alignment: .leading, spacing: 16) {
+                            if !upcoming.isEmpty {
+                                sectionHeader(
+                                    title: "Starting Soon",
+                                    systemImage: "clock.fill"
+                                )
+                                ForEach(upcoming) { status in
+                                    statusRow(for: status)
                                 }
+                            }
+
+                            if !live.isEmpty {
+                                sectionHeader(
+                                    title: "Live Now",
+                                    systemImage: "dot.radiowaves.left.and.right"
+                                )
+                                    .padding(.top, upcoming.isEmpty ? 0 : 6)
+                                ForEach(live) { status in
+                                    statusRow(for: status)
+                                }
+                            } else if !upcoming.isEmpty {
+                                // Nothing live right now, but there IS
+                                // something upcoming — say so plainly
+                                // instead of leaving a dead gap, so
+                                // nobody assumes the app is broken or
+                                // empty (the "empty room" problem).
+                                Text("Nothing live yet — check back when one of these starts.")
+                                    .font(DropInFont.body(13))
+                                    .foregroundColor(.dropInIndigo.opacity(0.45))
+                                    .padding(.horizontal, 4)
                             }
                         }
                         .padding(.horizontal, DropInLayout.screenMargin)
@@ -96,6 +119,38 @@ struct HomeFeedView: View {
         .sheet(isPresented: $showProfile) {
             ProfileView()
         }
+        .onAppear {
+            // Ask up front so the very first hang someone broadcasts can
+            // actually nudge friends, instead of silently failing later.
+            NotificationService.shared.requestAuthorizationIfNeeded()
+        }
+    }
+
+    @ViewBuilder
+    private func statusRow(for status: Status) -> some View {
+        let isOwn = status.userId == currentUserId
+        StatusRowView(
+            status: status,
+            isOwnStatus: isOwn,
+            currentUserId: authViewModel.currentUser?.id,
+            currentUserName: authViewModel.currentUser?.name,
+            currentUserAvatar: authViewModel.currentUser?.avatarUrl,
+            onTapAttend: {
+                homeViewModel.toggleAttendance(for: status, currentUserId: currentUserId)
+            },
+            onTogglePause: isOwn ? { homeViewModel.togglePause(for: status) } : nil
+        )
+    }
+
+    private func sectionHeader(title: String, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+            Text(title)
+                .font(DropInFont.bodyMedium(13))
+        }
+        .foregroundColor(.dropInIndigo.opacity(0.55))
+        .padding(.horizontal, 4)
     }
 
     /// Custom header replacing a native NavigationStack toolbar. A plain

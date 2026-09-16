@@ -40,6 +40,10 @@ enum MockData {
         usernamesByUserId[userId]
     }
 
+    /// All friend ids available to invite/pick from in the "who can see
+    /// this" picker, in a stable order.
+    static let allFriendIds: [String] = ["u1", "u2", "u3", "u4"]
+
     static let statuses: [Status] = [
         Status(
             userId: "u1",
@@ -47,6 +51,7 @@ enum MockData {
             activityText: "Grabbing coffee at Starbucks",
             category: .coffee,
             createdAt: Date(),
+            startsAt: Date(),
             expiresAt: Date().addingTimeInterval(45 * 60),
             attendees: ["u2", "u3"],
             avatarImageName: "Avatar6"
@@ -57,6 +62,7 @@ enum MockData {
             activityText: "Studying at the library",
             category: .study,
             createdAt: Date(),
+            startsAt: Date(),
             expiresAt: Date().addingTimeInterval(2 * 60 * 60),
             attendees: ["u1"],
             avatarImageName: "Avatar14"
@@ -67,9 +73,23 @@ enum MockData {
             activityText: "Routine walk",
             category: .walk,
             createdAt: Date(),
+            startsAt: Date(),
             expiresAt: Date().addingTimeInterval(60 * 60),
             attendees: ["u1", "u2", "u4"],
             avatarImageName: "Avatar9"
+        ),
+        // Demo of a "plan ahead" hang that hasn't started yet — shows up
+        // in the "Starting Soon" section instead of "Live Now".
+        Status(
+            userId: "u4",
+            username: "Jordan",
+            activityText: "Dinner at the new ramen spot",
+            category: .food,
+            createdAt: Date(),
+            startsAt: Date().addingTimeInterval(40 * 60),
+            expiresAt: Date().addingTimeInterval(40 * 60 + 90 * 60),
+            attendees: [],
+            avatarImageName: "Avatar20"
         )
     ]
 }
