@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-AFC2A5" alt="Firebase">
   <img src="https://img.shields.io/badge/Apple%20Intelligence-on--device-B79CE0" alt="Apple Intelligence">
   <br>
-  <a href="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml"><img src="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <!-- <a href="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml"><img src="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml/badge.svg" alt="Tests"></a> -->
 </p>
 
 ---
