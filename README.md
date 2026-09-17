@@ -15,13 +15,12 @@
   <img src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-AFC2A5" alt="Firebase">
   <img src="https://img.shields.io/badge/Apple%20Intelligence-on--device-B79CE0" alt="Apple Intelligence">
   <br>
-  <!-- Replace <your-username> with your GitHub username -->
-  <a href="https://github.com/<your-username>/DropIn/actions/workflows/tests.yml"><img src="https://github.com/<your-username>/DropIn/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml"><img src="https://github.com/PatidarAnjali/DropIn/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
 </p>
 
 ---
 
-> **Note:** This is just a fun personal project; it's not actually a real/published app.
+> **Note:** This is just a fun personal project; it's not actually a real/published app :)
 
 ---
 
@@ -34,8 +33,10 @@ No pressure to reply and no awkward "no." Plans disappear on their own once they
 ## Screenshots
 
 <p align="center">
-  <img width="1920" height="1080" alt="Live Feed 1" src="https://github.com/user-attachments/assets/a6619fd0-97a1-4f5c-9040-203744896b01" />
-  <img width="1920" height="1080" alt="Live Feed 2" src="https://github.com/user-attachments/assets/79bd7424-5b59-4ac2-9be5-ebee8f9da1fd" />
+<img width="1920" height="1080" alt="Live Feed 1" src="https://github.com/user-attachments/assets/2ad34a49-2dc5-4592-ab00-f60b1f4b164a" />
+<img width="1920" height="1080" alt="Live Feed 2" src="https://github.com/user-attachments/assets/c04583ab-3196-44c4-9e89-4289eb5651a2" />
+<img width="1920" height="1080" alt="Live Feed 3" src="https://github.com/user-attachments/assets/65a6f80d-43a3-4d72-907d-26e75775d5ae" />
+<img width="1920" height="1080" alt="Live Feed 4" src="https://github.com/user-attachments/assets/16c63c45-8e7e-4c0a-a3b7-4a726d068c83" />
 </p>
 
 ## Features
