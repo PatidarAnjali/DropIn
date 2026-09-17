@@ -8,9 +8,9 @@
 //
 
 import SwiftUI
-import Vision        // defines the `.qr` barcode type
-import VisionKit     // the live camera scanner
-import AVFoundation  // camera permission
+import Vision // defines the `.qr` barcode type
+import VisionKit // the live camera scanner
+import AVFoundation // camera permission
 
 enum QRScanner {
     enum Availability {

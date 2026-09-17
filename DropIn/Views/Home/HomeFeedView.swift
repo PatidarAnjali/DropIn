@@ -25,7 +25,7 @@ struct HomeFeedView: View {
         ZStack {
             // Plain background once inside the app. The hand-drawn
             // wallpaper only appears on the Login screen (the moment the
-            // app opens) — everyday use inside the app stays clean, with
+            // app opens); everyday use inside the app stays clean, with
             // just a couple of faint doodle accents for texture.
             Color.dropInCream.ignoresSafeArea()
 
@@ -95,7 +95,7 @@ struct HomeFeedView: View {
                                 }
                             } else if !upcoming.isEmpty {
                                 // Nothing live right now, but there IS
-                                // something upcoming — say so plainly
+                                // something upcoming; say so plainly
                                 // instead of leaving a dead gap, so
                                 // nobody assumes the app is broken or
                                 // empty (the "empty room" problem).
@@ -158,7 +158,7 @@ struct HomeFeedView: View {
                 }
             }
         }
-//        .doodleAccents()
+// .doodleAccents()
         .alert(
             "Couldn't update your RSVP",
             isPresented: Binding(

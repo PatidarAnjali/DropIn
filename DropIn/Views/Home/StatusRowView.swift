@@ -2,7 +2,7 @@
 //  StatusRowView.swift
 //  DropIn
 //
-//  One card in the Live Feed — matches the colored cards in the mockup
+//  One card in the Live Feed; matches the colored cards in the mockup
 //  (name, activity, expiry pill, avatar stack, and an "I'm Coming!" button).
 //
 //  The person who made the plan never gets an RSVP button on their own
@@ -17,7 +17,7 @@ struct StatusRowView: View {
     let isOwnStatus: Bool
     /// The signed-in user's id, name, and currently-chosen avatar, so a
     /// poster or attendee who picked a new avatar (or has none yet)
-    /// always shows the right image — or the right initial — instead of
+    /// always shows the right image (or the right initial) instead of
     /// a stale/mock one.
     var currentUserId: String? = nil
     var currentUserName: String? = nil
@@ -32,7 +32,7 @@ struct StatusRowView: View {
     /// never told someone blocked them.
     var blockedMeIds: Set<String> = []
     let onTapAttend: () -> Void
-    /// Only ever wired up for the signed-in user's own hangs — lets
+    /// Only ever wired up for the signed-in user's own hangs; lets
     /// them quietly go invisible without any "you were unpaused"-style
     /// notice going to friends.
     var onTogglePause: (() -> Void)? = nil

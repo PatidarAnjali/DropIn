@@ -154,7 +154,7 @@ struct Status: Identifiable, Codable {
         }
     }
 
-    /// Whichever timing badge is relevant right now — start countdown
+    /// Whichever timing badge is relevant right now; start countdown
     /// while upcoming, expiry countdown once live.
     var timingLabel: String {
         isUpcoming ? startLabel : expiryLabel

@@ -2,7 +2,7 @@
 //  MockData.swift
 //  DropIn
 //
-//  Now Preview-only fuel — HomeViewModel reads live data from Firestore,
+//  Now Preview-only fuel; HomeViewModel reads live data from Firestore,
 //  but #Preview blocks (StatusRowView, CreateStatusSheet, etc.) still use
 //  this so Xcode's canvas has something to render without hitting the
 //  network or requiring a signed-in Firebase user.

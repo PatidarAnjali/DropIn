@@ -2,7 +2,7 @@
 //  HomeViewModel.swift
 //  DropIn
 //
-//  Live Firestore version — HomeFeedView didn't need to change at all
+//  Live Firestore version; HomeFeedView didn't need to change at all
 //  to make this swap, which was the whole point of keeping Milestone 1
 //  behind this view model instead of in the view.
 //
@@ -117,7 +117,7 @@ final class HomeViewModel {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    /// Every non-expired hang `viewerId` is allowed to see at all —
+    /// Every non-expired hang `viewerId` is allowed to see at all;
     /// i.e. not paused by someone else, and either public or the
     /// viewer is one of the invited friends (or it's their own hang).
     private func visibleStatuses(for viewerId: String) -> [Status] {
@@ -130,7 +130,7 @@ final class HomeViewModel {
             .filter { $0.isVisible(to: viewerId) }
     }
 
-    /// Hangs that have already started — the main "Live Now" list.
+    /// Hangs that have already started; the main "Live Now" list.
     func liveStatuses(for viewerId: String) -> [Status] {
         applySearch(to: visibleStatuses(for: viewerId).filter { $0.isLive })
     }
@@ -150,7 +150,7 @@ final class HomeViewModel {
     }
 
     /// Writes a new hang to Firestore. We don't insert it into
-    /// `statuses` locally — the snapshot listener above will pick it up
+    /// `statuses` locally; the snapshot listener above will pick it up
     /// (with its real, server-assigned id) a moment later.
     func addStatus(_ status: Status) {
         do {
@@ -587,7 +587,7 @@ final class HomeViewModel {
         }
     }
 
-    /// The poster quietly goes invisible (or comes back) — no notice
+    /// The poster quietly goes invisible (or comes back); no notice
     /// goes to friends either way.
     func togglePause(for status: Status) {
         guard let id = status.id else { return }

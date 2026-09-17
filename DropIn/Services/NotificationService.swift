@@ -8,12 +8,12 @@
 //
 //  Milestone 1: uses local `UNUserNotificationCenter` notifications so
 //  the flow is demoable on-device without a backend. A single device
-//  obviously can't notify *other* people's phones — in Milestone 3 this
+//  obviously can't notify *other* people's phones; in Milestone 3 this
 //  gets replaced by a server function that fans a push out to a
 //  friend's actual devices when a Firestore status doc is created, but
 //  the call sites in the view models won't need to change.
 //
-//  Frequency guardrail (also from rjyo's feedback — "you'd need to nail
+//  Frequency guardrail (also from rjyo's feedback; "you'd need to nail
 //  the frequency so it doesn't get annoying"): we only ever send one
 //  notification per hang (its start), never repeated pings, and we
 //  never notify for a hang the viewer can't even see (paused / private
@@ -38,7 +38,7 @@ final class NotificationService {
     /// Called right after a hang is broadcast. If it's live immediately,
     /// this fires "now" (simulating the push a friend would get). If
     /// it's a planned hang, this schedules the nudge for `startsAt`
-    /// instead of firing right away — so friends aren't pinged for
+    /// instead of firing right away; so friends aren't pinged for
     /// something that hasn't started yet.
     func notifyFriends(about status: Status) {
         guard !status.isPaused else { return }
@@ -58,7 +58,7 @@ final class NotificationService {
         UNUserNotificationCenter.current().add(request)
     }
 
-    /// Cancels a still-pending "hang is starting" nudge — e.g. call this
+    /// Cancels a still-pending "hang is starting" nudge; e.g. call this
     /// if a poster deletes or pauses a planned hang before it starts.
     /// Clears every scheduled DropIn notification (used when deleting an account).
     func cancelAllNotifications() {

@@ -5,7 +5,7 @@
 //  Home is the only screen with the full doodle wallpaper. Everywhere
 //  else stays a plain cream background, but keeps a little personality
 //  with a couple of faint hand-drawn-style accents tucked along the
-//  screen's mid-edges — far from headers, close buttons, and bottom
+//  screen's mid-edges; far from headers, close buttons, and bottom
 //  CTAs so they never sit on top of anything tappable.
 //
 

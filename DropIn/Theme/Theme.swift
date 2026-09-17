@@ -12,17 +12,17 @@ import CoreText
 // MARK: - Colors
 // Pulled directly from your branding showcase swatches.
 extension Color {
-    static let dropInCoral      = Color(hex: "E2735A") // Warm Coral — primary actions
-    static let dropInIndigo     = Color(hex: "23345C") // Indigo Blue — headings/nav
-    static let dropInCream      = Color(hex: "FFFCFA") // Cream — app background
-    static let dropInSageGreen  = Color(hex: "AFC2A5") // Soft Sage Green — accents/cards
-    static let dropInPalePink   = Color(hex: "F2C9CE") // Pale Pink — accents/cards
+    static let dropInCoral = Color(hex: "E2735A") // Warm Coral: primary actions
+    static let dropInIndigo = Color(hex: "23345C") // Indigo Blue: headings/nav
+    static let dropInCream = Color(hex: "FFFCFA") // Cream: app background
+    static let dropInSageGreen = Color(hex: "AFC2A5") // Soft Sage Green: accents/cards
+    static let dropInPalePink = Color(hex: "F2C9CE") // Pale Pink: accents/cards
 
     // Doodle background icons — soft, low-opacity scribbles scattered behind
     // content (clocks, stars, mugs, clouds). Keep these muted so they read
     // as texture, not UI.
-    static let dropInDoodleLine    = Color(hex: "8A8175") // gray-brown outline doodles
-    static let dropInDoodleAccent  = Color(hex: "E8C9A0") // pale tan stars/sparkles
+    static let dropInDoodleLine = Color(hex: "8A8175") // gray-brown outline doodles
+    static let dropInDoodleAccent = Color(hex: "E8C9A0") // pale tan stars/sparkles
 
     /// Convenience hex initializer, e.g. Color(hex: "E2735A")
     init(hex: String) {
@@ -83,7 +83,7 @@ struct DropInCloseButton: View {
 
 // MARK: - Fonts
 // Raleway Bold  → the "DropIn" name only (DropInFont.brand)
-// Open Sans     → every other piece of text
+// Open Sans → every other piece of text
 //
 // The .ttf files live in Resources/Fonts. They're registered in code the
 // first time any DropInFont is used, so there's no Info.plist setup and

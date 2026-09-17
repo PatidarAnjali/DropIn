@@ -2,7 +2,7 @@
 //  AppBackground.swift
 //  DropIn
 //
-//  Full-bleed background used on the Login screen ONLY — the moment the
+//  Full-bleed background used on the Login screen ONLY; the moment the
 //  app opens. It's a cream fallback fill with the hand-drawn doodle
 //  wallpaper layered on top, both extending under the status bar /
 //  dynamic island / home indicator so there's never a seam at the edges
@@ -10,7 +10,7 @@
 //
 //  Every screen the user reaches after signing in (Home, Create Status,
 //  Profile) intentionally stays a plain cream background with a few
-//  scattered doodle accents instead — see DoodleAccents.swift — so the
+//  scattered doodle accents instead) see DoodleAccents.swift) so the
 //  wallpaper doesn't compete with content during everyday use.
 //
 
@@ -27,7 +27,7 @@ struct AppBackground: View {
         // sibling in a ZStack. A .fill image is wider than the screen, and
         // inside a ZStack it would stretch the whole layout (pushing the
         // login form past the screen edges). As an overlay it can't affect
-        // size — it just gets cropped to the screen.
+        // size; it just gets cropped to the screen.
         Color.dropInCream
             .overlay(
                 Image("DoodleWallpaper")
