@@ -1,0 +1,11 @@
+# Xcode personal settings
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# macOS
+.DS_Store
+
+# Firebase config (everyone uses their own)
+GoogleService-Info.plist

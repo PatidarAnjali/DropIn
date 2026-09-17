@@ -13,4 +13,8 @@ struct User: Identifiable, Codable {
     let name: String
     let email: String
     var avatarUrl: String?
+    /// Short code friends use to add you (see FriendCode). Optional
+    /// because accounts made before friends existed don't have one yet;
+    /// AuthViewModel creates it the next time they log in.
+    var friendCode: String?
 }

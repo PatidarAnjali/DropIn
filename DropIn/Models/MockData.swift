@@ -55,7 +55,9 @@ enum MockData {
             startsAt: Date(),
             expiresAt: Date().addingTimeInterval(45 * 60),
             attendees: ["u2", "u3"],
-            avatarImageName: "Avatar6"
+            avatarImageName: "Avatar6",
+            intent: .capped,
+            seatLimit: 3
         ),
         Status(
             userId: "u2",
@@ -66,7 +68,8 @@ enum MockData {
             startsAt: Date(),
             expiresAt: Date().addingTimeInterval(2 * 60 * 60),
             attendees: ["u1"],
-            avatarImageName: "Avatar14"
+            avatarImageName: "Avatar14",
+            intent: .quiet
         ),
         Status(
             userId: "u3",

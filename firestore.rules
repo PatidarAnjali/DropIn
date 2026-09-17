@@ -1,0 +1,171 @@
+// Firestore security rules for DropIn.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    // Friendship documents are named "smallerUid_largerUid".
+    function pairId(a, b) {
+      return a < b ? a + '_' + b : b + '_' + a;
+    }
+
+    function areFriends(a, b) {
+      let path = /databases/$(database)/documents/friendships/$(pairId(a, b));
+      return exists(path) && get(path).data.state == 'accepted';
+    }
+
+    // True if either person has blocked the other.
+    function blockedBetween(a, b) {
+      return exists(/databases/$(database)/documents/blocks/$(a + '_' + b))
+        || exists(/databases/$(database)/documents/blocks/$(b + '_' + a));
+    }
+
+    function onlyChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---------- Users ----------
+    // Any signed-in user can read profiles (needed for names, avatars,
+    // and looking up friend codes). You can only write or delete your own.
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && uid == me();
+    }
+
+    // ---------- Friendships ----------
+
+    match /friendships/{friendshipId} {
+      allow read: if signedIn() && me() in resource.data.userIds;
+
+      // Sending a request: must be from you, pending, and named correctly.
+      allow create: if signedIn()
+        && request.resource.data.requesterId == me()
+        && request.resource.data.state == 'pending'
+        && request.resource.data.userIds.size() == 2
+        && me() in request.resource.data.userIds
+        && friendshipId == pairId(request.resource.data.userIds[0], request.resource.data.userIds[1])
+        && !blockedBetween(request.resource.data.userIds[0], request.resource.data.userIds[1]);
+
+      // Accepting: only the person who received the request.
+      allow update: if signedIn()
+        && me() in resource.data.userIds
+        && resource.data.requesterId != me()
+        && resource.data.state == 'pending'
+        && request.resource.data.state == 'accepted'
+        && onlyChanged(['state']);
+
+      // Declining, cancelling, and unfriending: either person.
+      allow delete: if signedIn() && me() in resource.data.userIds;
+    }
+
+    // ---------- Plans ----------
+
+    match /statuses/{statusId} {
+      // NOTE: any signed-in user can read plans, and the app hides the
+      // ones you shouldn't see. Fully server-side privacy needs the feed
+      // to query only friends' plans; that's a next step.
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.userId == me()
+        && request.resource.data.attendees.size() == 0;
+
+      // The host can edit their plan, but never the attendee list or owner.
+      function hostEdit() {
+        return resource.data.userId == me()
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.attendees == resource.data.attendees;
+      }
+
+      // Friends can only add or remove themselves.
+      function joining() {
+        return !(me() in resource.data.attendees)
+          && request.resource.data.attendees.toSet() == resource.data.attendees.toSet().union([me()].toSet())
+          && request.time < resource.data.expiresAt
+          && areFriends(resource.data.userId, me())
+          && hasOpenSeat();
+      }
+
+      function leaving() {
+        return me() in resource.data.attendees
+          && request.resource.data.attendees.toSet() == resource.data.attendees.toSet().difference([me()].toSet());
+      }
+
+      // Limited Seats plans lock once they're full, enforced here too.
+      function hasOpenSeat() {
+        return resource.data.get('intent', 'openDoor') != 'capped'
+          || resource.data.get('seatLimit', null) == null
+          || request.resource.data.attendees.size() <= resource.data.seatLimit;
+      }
+
+      allow update: if signedIn() && (
+        hostEdit()
+        || (resource.data.userId != me() && onlyChanged(['attendees']) && (joining() || leaving()))
+      );
+
+      allow delete: if signedIn() && resource.data.userId == me();
+    }
+
+    // ---------- Who's Down? nudges ----------
+
+    match /nudges/{nudgeId} {
+      allow read: if signedIn()
+        && (resource.data.fromUserId == me() || me() in resource.data.toUserIds);
+
+      allow create: if signedIn()
+        && request.resource.data.fromUserId == me()
+        && request.resource.data.toUserIds.size() > 0
+        && request.resource.data.toUserIds.size() <= 4
+        && request.resource.data.message.size() <= 80;
+
+      // Friends who were asked can set only their own reply.
+      allow update: if signedIn()
+        && me() in resource.data.toUserIds
+        && onlyChanged(['responses'])
+        && request.resource.data.responses.diff(resource.data.responses).affectedKeys().hasOnly([me()]);
+
+      // The sender can end it early.
+      allow delete: if signedIn() && resource.data.fromUserId == me();
+    }
+
+    // ---------- Blocks ----------
+    // Both people can see a block (so each app hides the other person),
+    // but only the blocker can create or remove it.
+
+    match /blocks/{blockId} {
+      allow read: if signedIn()
+        && (resource.data.blockerId == me() || resource.data.blockedId == me());
+
+      allow create: if signedIn()
+        && request.resource.data.blockerId == me()
+        && request.resource.data.blockedId != me()
+        && blockId == me() + '_' + request.resource.data.blockedId;
+
+      allow delete: if signedIn() && resource.data.blockerId == me();
+    }
+
+    // ---------- Reports ----------
+    // Write-only from the app. Review them in the Firebase console.
+
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporterId == me()
+        && request.resource.data.reportedUserId != me()
+        && request.resource.data.reason in ['spam', 'harassment', 'inappropriate', 'unsafe', 'other']
+        && (request.resource.data.get('details', null) == null || request.resource.data.details.size() <= 500);
+      allow read, update, delete: if false;
+    }
+  }
+}

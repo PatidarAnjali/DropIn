@@ -54,13 +54,26 @@ final class NotificationService {
         // for firing at effectively t=0.
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(secondsUntilStart, 1), repeats: false)
 
-        let request = UNNotificationRequest(identifier: "hang-\(status.id)", content: content, trigger: trigger)
+        let request = UNNotificationRequest(identifier: notificationId(for: status), content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request)
     }
 
     /// Cancels a still-pending "hang is starting" nudge — e.g. call this
     /// if a poster deletes or pauses a planned hang before it starts.
+    /// Clears every scheduled DropIn notification (used when deleting an account).
+    func cancelAllNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+
     func cancelNotification(for status: Status) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["hang-\(status.id)"])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId(for: status)])
+    }
+
+    /// A brand-new plan doesn't have a Firestore id yet when its
+    /// notification is scheduled, so the id is built from who posted it
+    /// and when (to the millisecond), which is the same before and after
+    /// saving.
+    private func notificationId(for status: Status) -> String {
+        "hang-\(status.userId)-\(Int(status.createdAt.timeIntervalSince1970 * 1000))"
     }
 }

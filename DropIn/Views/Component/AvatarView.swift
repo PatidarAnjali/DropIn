@@ -2,7 +2,8 @@
 //  AvatarView.swift
 //  DropIn
 //
-//  Shows a friend's picture avatar when we have one (either a local asset
+//  Shows a friend's avatar: a custom-built one (see AvatarConfig), a
+//  picture avatar (either a local asset
 //  name for mock/demo data, or later a remote URL from Firebase Storage),
 //  and falls back to a soft initials bubble otherwise so the UI never
 //  shows a broken image.
@@ -18,7 +19,10 @@ struct AvatarView: View {
 
     var body: some View {
         Group {
-            if let imageName {
+            if let custom = AvatarConfig(storageString: imageName) {
+                // Built with AvatarBuilderView
+                AvatarRenderer(config: custom)
+            } else if let imageName {
                 Image(imageName)
                     .resizable()
                     .scaledToFill()
@@ -43,6 +47,7 @@ struct AvatarView: View {
     HStack(spacing: -10) {
         AvatarView(name: "Mara", imageName: "Avatar6", size: 40)
         AvatarView(name: "Rarian", imageName: "Avatar12", size: 40)
+        AvatarView(name: "Custom", imageName: AvatarConfig.quickStarts[2].storageString, size: 40)
         AvatarView(name: "Name", imageName: nil, size: 40)
     }
     .padding()

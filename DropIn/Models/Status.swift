@@ -40,15 +40,15 @@ struct Status: Identifiable, Codable {
     @DocumentID var id: String?
     let userId: String
     let username: String
-    let activityText: String
-    let category: StatusCategory
+    var activityText: String
+    var category: StatusCategory
     let createdAt: Date
     /// When the hang actually starts. Equal to `createdAt` for an
     /// immediate "I'm here now" hang. Set in the future for a
     /// "plan ahead" hang (e.g. bdenzer's Reddit feedback: "I'll be at
     /// the park in 30 min" is more useful than a live-only ping).
     var startsAt: Date = Date()
-    let expiresAt: Date
+    var expiresAt: Date
     var attendees: [String]
     /// Local asset name (mock data) or, later, a remote avatar URL string
     /// from Firebase Storage. Nil falls back to an initials bubble.
@@ -66,6 +66,39 @@ struct Status: Identifiable, Codable {
     /// per rjyo's feedback, nobody should have to explain why they
     /// turned their location off.
     var isPaused: Bool = false
+    /// How the poster wants company (see PlanRules.swift). Optional so
+    /// plans saved before this existed still load; nil means Open Door.
+    var intent: PlanIntent? = nil
+    /// Number of open seats. Only used when `intent` is `.capped`.
+    var seatLimit: Int? = nil
+
+    var resolvedIntent: PlanIntent {
+        intent ?? .openDoor
+    }
+
+    /// Seats still open, or nil if there's no limit.
+    var seatsLeft: Int? {
+        PlanRules.seatsLeft(intent: resolvedIntent, seatLimit: seatLimit, attendeeCount: attendees.count)
+    }
+
+    var isFull: Bool {
+        seatsLeft == 0
+    }
+
+    /// The attendee list after `userId` taps the RSVP button, or why
+    /// they can't. HomeViewModel re-runs the same rules on the latest
+    /// server copy inside a transaction before saving.
+    func toggledAttendees(for userId: String, now: Date = Date()) -> Result<[String], RSVPError> {
+        PlanRules.toggledAttendees(
+            current: attendees,
+            userId: userId,
+            ownerId: self.userId,
+            intent: resolvedIntent,
+            seatLimit: seatLimit,
+            expiresAt: expiresAt,
+            now: now
+        )
+    }
 
     var isExpired: Bool {
         Date() > expiresAt

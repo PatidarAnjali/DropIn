@@ -23,6 +23,14 @@ struct CreateStatusSheet: View {
     @State private var selectedCategory: StatusCategory = .coffee
     @State private var expirationMinutes: Double = 60 // 1 hour default
 
+    // Vibe of the plan (Open Door / Quiet / Limited Seats).
+    @State private var intent: PlanIntent = .openDoor
+    @State private var seatLimit: Int = 2
+
+    // AI autofill
+    @State private var isAutofilling = false
+    @State private var autofillSource: PlanAssistant.Source?
+
     // "Plan ahead" (bdenzer's feedback): let a hang start later instead
     // of only ever being live right now.
     @State private var timingMode: TimingMode = .now
@@ -33,10 +41,54 @@ struct CreateStatusSheet: View {
     @State private var visibilityMode: VisibilityMode = .everyone
     @State private var selectedFriendIds: Set<String> = []
 
+    /// The plan being edited, or nil when posting a new one.
+    private let editing: Status?
+    /// Real DropIn accounts to share with (from HomeViewModel).
+    private let friends: [User]
     let onBroadcast: (Status) -> Void
 
-    private var friendOptions: [String] {
-        MockData.allFriendIds.filter { $0 != authViewModel.currentUser?.id }
+    /// - Parameters:
+    ///   - editing: pass an existing plan to edit it; leave nil to post a new one.
+    ///   - onBroadcast: receives the new plan, or the edited copy (same id).
+    init(editing: Status? = nil, friends: [User] = [], onBroadcast: @escaping (Status) -> Void) {
+        self.editing = editing
+        self.friends = friends
+        self.onBroadcast = onBroadcast
+        guard let plan = editing else { return }
+
+        // Pre-fill the form with the plan's current values.
+        _activityText = State(initialValue: plan.activityText)
+        _selectedCategory = State(initialValue: plan.category)
+        _intent = State(initialValue: plan.resolvedIntent)
+        _seatLimit = State(initialValue: max(plan.seatLimit ?? 2, plan.attendees.count, 1))
+        _timingMode = State(initialValue: plan.isUpcoming ? .later : .now)
+        if plan.isUpcoming {
+            _startDate = State(initialValue: plan.startsAt)
+        }
+        let minutes = Int(plan.expiresAt.timeIntervalSince(plan.startsAt) / 60)
+        _expirationMinutes = State(initialValue: Double(min(max((minutes + 7) / 15 * 15, 15), 720)))
+        if let visibleTo = plan.visibleToUserIds {
+            _visibilityMode = State(initialValue: .selected)
+            _selectedFriendIds = State(initialValue: Set(visibleTo))
+        }
+    }
+
+    private var isEditing: Bool { editing != nil }
+
+    /// Friends who already grabbed a seat keep it, so the limit can't go below them.
+    private var minimumSeats: Int {
+        min(max(1, editing?.attendees.count ?? 0), PlanRules.seatRange.upperBound)
+    }
+
+    /// Selected friends who still have an account. Drops ids of deleted
+    /// accounts (or old sample friends) that an edited plan might still have.
+    private var validSelectedIds: Set<String> {
+        guard !friendOptions.isEmpty else { return selectedFriendIds }
+        return selectedFriendIds.intersection(friendOptions.compactMap(\.id))
+    }
+
+    private var friendOptions: [User] {
+        friends.filter { $0.id != nil && $0.id != authViewModel.currentUser?.id }
     }
 
     var body: some View {
@@ -46,25 +98,29 @@ struct CreateStatusSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     HStack(spacing: 8) {
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                        Image(systemName: isEditing ? "pencil.circle.fill" : "bubble.left.and.bubble.right.fill")
                             .font(.system(size: 18))
                             .foregroundColor(.dropInCoral)
-                        Text("What are you up to?")
+                        Text(isEditing ? "Edit your plan" : "What are you up to?")
                             .font(DropInFont.heading(22))
                             .foregroundColor(.dropInIndigo)
                         Spacer()
-                        closeButton
+                        DropInCloseButton { dismiss() }
                     }
 
-                    TextField("E.g., Grabbing coffee...", text: $activityText, axis: .vertical)
-                        .font(DropInFont.body(16))
-                        .padding(16)
-                        .background(Color.white.opacity(0.75))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.dropInIndigo.opacity(0.08), lineWidth: 1)
-                        )
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextField("E.g., dinner at Chipotle, room for 2", text: $activityText, axis: .vertical)
+                            .font(DropInFont.body(16))
+                            .padding(16)
+                            .background(Color.white.opacity(0.75))
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(Color.dropInIndigo.opacity(0.08), lineWidth: 1)
+                            )
+
+                        autofillRow
+                    }
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Category")
@@ -78,6 +134,8 @@ struct CreateStatusSheet: View {
                         }
                     }
 
+                    intentSection
+
                     timingSection
 
                     visibilitySection
@@ -87,34 +145,217 @@ struct CreateStatusSheet: View {
                             .font(DropInFont.bodyMedium(15))
                             .foregroundColor(.dropInIndigo)
 
-                        Slider(value: $expirationMinutes, in: 30...720, step: 30)
+                        Slider(value: $expirationMinutes, in: 15...720, step: 15)
                             .tint(.dropInCoral)
 
                         HStack {
-                            Text("1 hour")
+                            Text("Lasts")
+                                .foregroundColor(.dropInIndigo.opacity(0.5))
                             Spacer()
-                            Text("3 hours")
-                            Spacer()
-                            Text("Tonight")
+                            Text(durationLabel)
+                                .font(DropInFont.bodyMedium(13))
+                                .foregroundColor(.dropInIndigo)
                         }
-                        .font(DropInFont.body(12))
-                        .foregroundColor(.dropInIndigo.opacity(0.5))
+                        .font(DropInFont.body(13))
                     }
                     .padding(18)
                     .dropInCard(cornerRadius: 18)
 
-                    Button("Broadcast Plan") {
+                    Button(isEditing ? "Save Changes" : "Broadcast Plan") {
                         broadcast()
                     }
                     .buttonStyle(DropInPrimaryButtonStyle())
-                    .disabled(activityText.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(trimmedText.isEmpty || isAutofilling)
                 }
-                .padding(.horizontal, 32)
-                .padding(.top, 44)
+                .padding(.horizontal, DropInLayout.sheetMargin)
+                .padding(.top, DropInLayout.sheetTopPadding)
                 .padding(.bottom, 28)
             }
         }
 //        .doodleAccents()
+    }
+
+    // MARK: - AI autofill
+
+    private var trimmedText: String {
+        activityText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var autofillRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                autofill()
+            } label: {
+                HStack(spacing: 6) {
+                    if isAutofilling {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    Text(isAutofilling ? "Filling in..." : "Autofill from text")
+                        .font(DropInFont.bodyMedium(13))
+                }
+                .foregroundColor(.white)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 14)
+                .background(Color.dropInCoral)
+                .clipShape(Capsule())
+                .shadow(color: Color.dropInCoral.opacity(0.3), radius: 6, y: 3)
+            }
+            .buttonStyle(.plain)
+            .disabled(trimmedText.isEmpty || isAutofilling)
+            .opacity(trimmedText.isEmpty ? 0.45 : 1)
+
+            if autofillSource == nil || trimmedText.isEmpty {
+                // Explains the feature until it's been used.
+                Text("Describe your plan in your own words, then tap Autofill. It picks the category, vibe, time, and seats for you.")
+                    .font(DropInFont.body(12))
+                    .foregroundColor(.dropInIndigo.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let autofillSource, !trimmedText.isEmpty {
+                Label(
+                    autofillSource == .appleIntelligence
+                        ? "Filled in with Apple Intelligence. Double-check before posting."
+                        : "Filled in automatically. Double-check before posting.",
+                    systemImage: autofillSource == .appleIntelligence ? "apple.intelligence" : "wand.and.stars"
+                )
+                .font(DropInFont.body(12))
+                .foregroundColor(.dropInIndigo.opacity(0.55))
+            }
+        }
+    }
+
+    private func autofill() {
+        let text = trimmedText
+        guard !text.isEmpty else { return }
+        isAutofilling = true
+        Task {
+            let result = await PlanAssistant.draft(from: text)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                apply(result.draft)
+                autofillSource = result.source
+            }
+            isAutofilling = false
+        }
+    }
+
+    private func apply(_ draft: PlanDraft) {
+        activityText = draft.activityText
+        selectedCategory = draft.category
+        intent = draft.intent
+        if let seats = draft.seatLimit {
+            seatLimit = max(seats, minimumSeats)
+        }
+        if draft.startsInMinutes > 0 {
+            timingMode = .later
+            startDate = Date().addingTimeInterval(Double(draft.startsInMinutes) * 60)
+        } else {
+            timingMode = .now
+        }
+        // Snap to the slider's 15-minute steps.
+        let snapped = ((draft.durationMinutes + 7) / 15) * 15
+        expirationMinutes = Double(min(max(snapped, 15), 720))
+    }
+
+    private var durationLabel: String {
+        let total = Int(expirationMinutes)
+        let hours = total / 60
+        let minutes = total % 60
+        switch (hours, minutes) {
+        case (0, _): return "\(minutes) min"
+        case (_, 0): return hours == 1 ? "1 hour" : "\(hours) hours"
+        default: return "\(hours)h \(minutes)m"
+        }
+    }
+
+    // MARK: - Intent ("vibe")
+
+    private var intentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Vibe")
+                .font(DropInFont.bodyMedium(15))
+                .foregroundColor(.dropInIndigo)
+
+            VStack(spacing: 8) {
+                ForEach(PlanIntent.allCases, id: \.self) { option in
+                    intentRow(option)
+                }
+            }
+
+            if intent == .capped {
+                HStack(spacing: 12) {
+                    Text("Open seats")
+                        .font(DropInFont.bodyMedium(14))
+                        .foregroundColor(.dropInIndigo)
+                    Spacer()
+                    Text("\(seatLimit)")
+                        .font(DropInFont.heading(18))
+                        .foregroundColor(.dropInIndigo)
+                        .monospacedDigit()
+                    Stepper("Open seats", value: $seatLimit, in: minimumSeats...PlanRules.seatRange.upperBound)
+                        .labelsHidden()
+                }
+                .padding(.top, 4)
+
+                if let taken = editing?.attendees.count, taken > 0 {
+                    Text("\(taken) \(taken == 1 ? "friend already has a seat" : "friends already have seats"), so the limit can't go below \(taken).")
+                        .font(DropInFont.body(12))
+                        .foregroundColor(.dropInIndigo.opacity(0.5))
+                }
+
+                Text("Locks automatically once \(seatLimit) \(seatLimit == 1 ? "friend joins" : "friends join").")
+                    .font(DropInFont.body(12))
+                    .foregroundColor(.dropInIndigo.opacity(0.5))
+            }
+        }
+        .padding(18)
+        .dropInCard(cornerRadius: 18)
+    }
+
+    private func intentRow(_ option: PlanIntent) -> some View {
+        let isSelected = intent == option
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                intent = option
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: option.systemImage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : .dropInIndigo)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(isSelected ? Color.dropInIndigo : Color.white))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                        .font(DropInFont.bodyMedium(14))
+                        .foregroundColor(.dropInIndigo)
+                    Text(option.subtitle)
+                        .font(DropInFont.body(12))
+                        .foregroundColor(.dropInIndigo.opacity(0.55))
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(isSelected ? .dropInCoral : .dropInIndigo.opacity(0.2))
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .background(Color.white.opacity(isSelected ? 0.9 : 0.45))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? Color.dropInCoral.opacity(0.6) : Color.dropInIndigo.opacity(0.06), lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Timing ("plan ahead")
@@ -131,6 +372,12 @@ struct CreateStatusSheet: View {
                         timingMode = mode
                     }
                 }
+            }
+
+            if timingMode == .now, let editing, !editing.isUpcoming {
+                Text("Already live. It keeps its original start time.")
+                    .font(DropInFont.body(12))
+                    .foregroundColor(.dropInIndigo.opacity(0.5))
             }
 
             if timingMode == .later {
@@ -171,14 +418,21 @@ struct CreateStatusSheet: View {
             }
 
             if visibilityMode == .selected {
-                FlowLayout(spacing: 8) {
-                    ForEach(friendOptions, id: \.self) { friendId in
-                        friendChip(friendId)
+                if friendOptions.isEmpty {
+                    Text("No one else has a DropIn account yet. Once friends sign up, they'll show up here.")
+                        .font(DropInFont.body(12))
+                        .foregroundColor(.dropInIndigo.opacity(0.55))
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    FlowLayout(spacing: 8) {
+                        ForEach(friendOptions, id: \.id) { friend in
+                            friendChip(friend)
+                        }
                     }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
 
-                if selectedFriendIds.isEmpty {
+                if validSelectedIds.isEmpty && !friendOptions.isEmpty {
                     Text("Pick at least one friend, or this hang won't be visible to anyone.")
                         .font(DropInFont.body(12))
                         .foregroundColor(.dropInCoral)
@@ -189,9 +443,10 @@ struct CreateStatusSheet: View {
         .dropInCard(cornerRadius: 18)
     }
 
-    private func friendChip(_ friendId: String) -> some View {
+    private func friendChip(_ friend: User) -> some View {
+        let friendId = friend.id ?? ""
         let isSelected = selectedFriendIds.contains(friendId)
-        let name = MockData.username(forUserId: friendId) ?? "Friend"
+        let name = friend.name
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 if isSelected {
@@ -202,7 +457,7 @@ struct CreateStatusSheet: View {
             }
         } label: {
             HStack(spacing: 6) {
-                AvatarView(name: name, imageName: MockData.avatar(forUserId: friendId), size: 22)
+                AvatarView(name: name, imageName: friend.avatarUrl, size: 22)
                 Text(name)
                     .font(DropInFont.bodyMedium(13))
             }
@@ -232,18 +487,6 @@ struct CreateStatusSheet: View {
         }
     }
 
-    private var closeButton: some View {
-        Button {
-            dismiss()
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.dropInIndigo.opacity(0.7))
-                .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.75))
-                .clipShape(Circle())
-        }
-    }
 
     private func categoryButton(_ category: StatusCategory) -> some View {
         let isSelected = category == selectedCategory
@@ -268,20 +511,50 @@ struct CreateStatusSheet: View {
     }
 
     private func broadcast() {
-        let starts = timingMode == .now ? Date() : max(startDate, Date())
-        let visibility: [String]? = visibilityMode == .selected ? Array(selectedFriendIds) : nil
+        let visibility: [String]? = visibilityMode == .selected ? Array(validSelectedIds) : nil
+
+        let starts: Date
+        switch timingMode {
+        case .later:
+            starts = max(startDate, Date())
+        case .now:
+            // An already-live plan keeps its start; everything else starts now.
+            if let editing, !editing.isUpcoming {
+                starts = editing.startsAt
+            } else {
+                starts = Date()
+            }
+        }
+        // Never save a plan that has already ended.
+        let expires = max(starts.addingTimeInterval(expirationMinutes * 60), Date().addingTimeInterval(15 * 60))
+
+        if var updated = editing {
+            // Keeps id, attendees, pause state, and who posted it.
+            updated.activityText = trimmedText
+            updated.category = selectedCategory
+            updated.startsAt = starts
+            updated.expiresAt = expires
+            updated.visibleToUserIds = visibility
+            updated.intent = intent
+            updated.seatLimit = intent == .capped ? max(seatLimit, minimumSeats) : nil
+            onBroadcast(updated)
+            dismiss()
+            return
+        }
 
         let newStatus = Status(
             userId: authViewModel.currentUser?.id ?? "me",
             username: authViewModel.currentUser?.name ?? "You",
-            activityText: activityText,
+            activityText: trimmedText,
             category: selectedCategory,
             createdAt: Date(),
             startsAt: starts,
-            expiresAt: starts.addingTimeInterval(expirationMinutes * 60),
+            expiresAt: expires,
             attendees: [],
             avatarImageName: authViewModel.currentUser?.avatarUrl,
-            visibleToUserIds: visibility
+            visibleToUserIds: visibility,
+            intent: intent,
+            seatLimit: intent == .capped ? seatLimit : nil
         )
         onBroadcast(newStatus)
         dismiss()

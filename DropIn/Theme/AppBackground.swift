@@ -23,15 +23,20 @@ struct AppBackground: View {
     var wallpaperOpacity: Double = 1.0
 
     var body: some View {
-        ZStack {
-            Color.dropInCream
-
-            Image("DoodleWallpaper")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .opacity(wallpaperOpacity)
-        }
-        .ignoresSafeArea()
+        // The wallpaper is an overlay on the cream color rather than a
+        // sibling in a ZStack. A .fill image is wider than the screen, and
+        // inside a ZStack it would stretch the whole layout (pushing the
+        // login form past the screen edges). As an overlay it can't affect
+        // size — it just gets cropped to the screen.
+        Color.dropInCream
+            .overlay(
+                Image("DoodleWallpaper")
+                    .resizable()
+                    .scaledToFill()
+                    .opacity(wallpaperOpacity)
+            )
+            .clipped()
+            .ignoresSafeArea()
     }
 }
 
